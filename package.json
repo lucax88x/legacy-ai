@@ -1,0 +1,14 @@
+{
+  "name": "legacy-project",
+  "version": "1.0.0",
+  "description": "Legacy project with API, CLI, and database services",
+  "scripts": {
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "api": "cd src/Legacy.Api && dotnet run",
+    "cli": "cd src/Legacy.DataGenerator && dotnet run"
+  },
+  "keywords": ["legacy", "api", "cli"],
+  "author": "",
+  "license": "ISC"
+}

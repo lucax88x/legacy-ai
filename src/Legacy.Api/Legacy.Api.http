@@ -1,0 +1,123 @@
+### Get all products
+
+GET {{Legacy_Api_HostAddress}}/api/products HTTP/1.1
+Accept: application/json
+
+
+### 
+
+
+### Get product by ID
+
+GET {{Legacy_Api_HostAddress}}/api/products/1 HTTP/1.1
+Accept: application/json
+
+
+### 
+
+
+### Create product
+
+POST {{Legacy_Api_HostAddress}}/api/products HTTP/1.1
+Content-Type: application/json
+
+{
+  "category": "Electronics",
+  "description": "This is a test product",
+  "name": "Test Product",
+  "price": 29.99,
+  "stockQuantity": 100
+}
+
+
+### 
+
+
+### Update product
+
+PUT {{Legacy_Api_HostAddress}}/api/products/1 HTTP/1.1
+Content-Type: application/json
+
+{
+  "category": "Electronics",
+  "description": "Updated description",
+  "name": "Updated Product",
+  "price": 39.99,
+  "stockQuantity": 150
+}
+
+
+### 
+
+
+### Delete product
+
+DELETE {{Legacy_Api_HostAddress}}/api/products/1 HTTP/1.1
+
+
+### 
+
+
+### Get all orders
+
+GET {{Legacy_Api_HostAddress}}/api/orders HTTP/1.1
+Accept: application/json
+
+
+### 
+
+
+### Get order by ID
+
+GET {{Legacy_Api_HostAddress}}/api/orders/1 HTTP/1.1
+Accept: application/json
+
+
+### 
+
+
+### Create order
+
+POST {{Legacy_Api_HostAddress}}/api/orders HTTP/1.1
+Content-Type: application/json
+
+{
+  "customerAddress": "123 Main St, City, Country",
+  "customerEmail": "john.doe@example.com",
+  "customerName": "John Doe",
+  "orderItems": [
+    {
+      "productId": 1,
+      "quantity": 2,
+      "unitPrice": 29.99
+    }
+  ],
+  "status": "Pending"
+}
+
+
+### 
+
+
+### Update order
+
+PUT {{Legacy_Api_HostAddress}}/api/orders/1 HTTP/1.1
+Content-Type: application/json
+
+{
+  "customerAddress": "456 Oak Ave, City, Country",
+  "customerEmail": "john.doe@example.com",
+  "customerName": "John Doe",
+  "status": "Processing"
+}
+
+
+### 
+
+
+### Delete order
+
+DELETE {{Legacy_Api_HostAddress}}/api/orders/1 HTTP/1.1
+
+
+### 

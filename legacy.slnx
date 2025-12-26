@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="src\Legacy.Api\Legacy.Api.csproj" Type="Classic C#" />
+  <Project Path="src\Legacy.DataGenerator\Legacy.DataGenerator.csproj" Type="Classic C#" />
+</Solution>
