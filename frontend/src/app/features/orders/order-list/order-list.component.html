@@ -1,0 +1,60 @@
+<div class="page-header">
+  <h1>Orders</h1>
+  <a routerLink="/orders/new" class="btn btn-primary">Create Order</a>
+</div>
+
+@if (orderService.loading()) {
+  <div class="loading">Loading orders...</div>
+}
+
+@if (orderService.error()) {
+  <div class="error">{{ orderService.error() }}</div>
+}
+
+@if (!orderService.loading() && orderService.orders().length === 0) {
+  <div class="empty-state">
+    <p>No orders found.</p>
+    <a routerLink="/orders/new" class="btn btn-primary">Create your first order</a>
+  </div>
+}
+
+@if (orderService.orders().length > 0) {
+  <div class="table-container">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Customer</th>
+          <th>Email</th>
+          <th>Status</th>
+          <th>Total</th>
+          <th>Order Date</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (order of orderService.orders(); track order.id) {
+          <tr>
+            <td>{{ order.id }}</td>
+            <td>
+              <a [routerLink]="['/orders', order.id]">{{ order.customerName }}</a>
+            </td>
+            <td>{{ order.customerEmail }}</td>
+            <td>
+              <span class="status-badge" [class]="getStatusClass(order.status)">
+                {{ getStatusLabel(order.status) }}
+              </span>
+            </td>
+            <td>{{ order.totalAmount | currency }}</td>
+            <td>{{ order.orderDate | date:'short' }}</td>
+            <td class="actions">
+              <a [routerLink]="['/orders', order.id]" class="btn btn-sm">View</a>
+              <a [routerLink]="['/orders', order.id, 'edit']" class="btn btn-sm btn-secondary">Edit</a>
+              <button (click)="deleteOrder(order.id)" class="btn btn-sm btn-danger">Delete</button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}

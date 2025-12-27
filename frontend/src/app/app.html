@@ -1,0 +1,17 @@
+<header class="app-header">
+  <div class="container">
+    <a routerLink="/" class="logo">{{ title() }}</a>
+    <nav class="main-nav">
+      <a routerLink="/products" routerLinkActive="active" [routerLinkActiveOptions]="{exact: false}">Products</a>
+      <a routerLink="/orders" routerLinkActive="active" [routerLinkActiveOptions]="{exact: false}">Orders</a>
+    </nav>
+  </div>
+</header>
+
+<main class="app-main">
+  <div class="container">
+    <router-outlet />
+  </div>
+</main>
+
+<app-chatbot />

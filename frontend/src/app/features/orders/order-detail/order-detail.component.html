@@ -1,0 +1,104 @@
+<div class="page-header">
+  <h1>Order Details</h1>
+  <div class="header-actions">
+    <a routerLink="/orders" class="btn">Back to List</a>
+  </div>
+</div>
+
+@if (orderService.loading()) {
+  <div class="loading">Loading order...</div>
+}
+
+@if (orderService.error()) {
+  <div class="error">{{ orderService.error() }}</div>
+}
+
+@if (orderService.selectedOrder(); as order) {
+  <div class="detail-card">
+    <div class="detail-header">
+      <h2>Order #{{ order.id }}</h2>
+      <div class="detail-actions">
+        <a [routerLink]="['/orders', order.id, 'edit']" class="btn btn-secondary">Edit</a>
+        <button (click)="deleteOrder()" class="btn btn-danger">Delete</button>
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <h3>Customer Information</h3>
+      <div class="detail-grid">
+        <div class="detail-item">
+          <label>Name</label>
+          <span>{{ order.customerName }}</span>
+        </div>
+        <div class="detail-item">
+          <label>Email</label>
+          <span>{{ order.customerEmail }}</span>
+        </div>
+        <div class="detail-item full-width">
+          <label>Address</label>
+          <span>{{ order.customerAddress }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <h3>Order Information</h3>
+      <div class="detail-grid">
+        <div class="detail-item">
+          <label>Status</label>
+          <span class="status-badge" [class]="getStatusClass(order.status)">
+            {{ getStatusLabel(order.status) }}
+          </span>
+        </div>
+        <div class="detail-item">
+          <label>Total Amount</label>
+          <span class="highlight">{{ order.totalAmount | currency }}</span>
+        </div>
+        <div class="detail-item">
+          <label>Order Date</label>
+          <span>{{ order.orderDate | date:'medium' }}</span>
+        </div>
+        <div class="detail-item">
+          <label>Created At</label>
+          <span>{{ order.createdAt | date:'medium' }}</span>
+        </div>
+      </div>
+    </div>
+
+    @if (order.orderItems.length > 0) {
+      <div class="detail-section">
+        <h3>Order Items</h3>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Unit Price</th>
+                <th>Quantity</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of order.orderItems; track item.id) {
+                <tr>
+                  <td>
+                    <a [routerLink]="['/products', item.productId]">{{ item.productName }}</a>
+                  </td>
+                  <td>{{ item.unitPrice | currency }}</td>
+                  <td>{{ item.quantity }}</td>
+                  <td>{{ item.totalPrice | currency }}</td>
+                </tr>
+              }
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colspan="3" class="text-right"><strong>Total:</strong></td>
+                <td><strong>{{ order.totalAmount | currency }}</strong></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    }
+  </div>
+}

@@ -1,0 +1,77 @@
+<!-- Chat Toggle Button -->
+<button class="chat-toggle" (click)="toggle()" [class.open]="isOpen()">
+  @if (isOpen()) {
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <line x1="18" y1="6" x2="6" y2="18"></line>
+      <line x1="6" y1="6" x2="18" y2="18"></line>
+    </svg>
+  } @else {
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+    </svg>
+  }
+</button>
+
+<!-- Chat Window -->
+@if (isOpen()) {
+  <div class="chat-window">
+    <div class="chat-header">
+      <h3>Assistant</h3>
+      <span class="chat-subtitle">Ask about products & orders</span>
+    </div>
+
+    <div class="chat-messages" #messagesContainer>
+      @if (chatService.messages().length === 0) {
+        <div class="chat-empty">
+          <p>Hi! I can help you manage products and orders.</p>
+          <p class="hint">Try asking:</p>
+          <ul>
+            <li>"Show me all products"</li>
+            <li>"Create a new product called Laptop"</li>
+            <li>"What orders do we have?"</li>
+          </ul>
+        </div>
+      }
+
+      @for (message of chatService.messages(); track message.timestamp) {
+        <div class="message" [class.user]="message.role === 'user'" [class.assistant]="message.role === 'assistant'">
+          <div class="message-content">{{ message.content }}</div>
+          <div class="message-time">{{ message.timestamp | date:'shortTime' }}</div>
+        </div>
+      }
+
+      @if (chatService.loading()) {
+        <div class="message assistant">
+          <div class="message-content typing">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+        </div>
+      }
+
+      @if (chatService.error()) {
+        <div class="message error">
+          <div class="message-content">Error: {{ chatService.error() }}</div>
+        </div>
+      }
+    </div>
+
+    <div class="chat-input">
+      <input
+        type="text"
+        placeholder="Type a message..."
+        [ngModel]="inputMessage()"
+        (ngModelChange)="inputMessage.set($event)"
+        (keydown)="onKeyDown($event)"
+        [disabled]="chatService.loading()"
+      />
+      <button (click)="sendMessage()" [disabled]="chatService.loading() || !inputMessage().trim()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="22" y1="2" x2="11" y2="13"></line>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+        </svg>
+      </button>
+    </div>
+  </div>
+}
