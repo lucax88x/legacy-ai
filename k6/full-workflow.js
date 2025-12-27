@@ -3,7 +3,7 @@ import { check, sleep, group } from 'k6';
 import { Faker } from 'https://jslib.k6.io/k6-faker/0.0.2/index.js';
 import { randomIntBetween } from 'https://jslib.k6.io/k6-utils/1.2.0/index.js';
 
-const BASE_URL = __ENV.BASE_URL || 'http://localhost:5000';
+const BASE_URL = __ENV.BASE_URL || 'http://localhost:5179';
 const faker = new Faker();
 
 const statuses = ['Pending', 'Processing', 'Shipped', 'Delivered'];

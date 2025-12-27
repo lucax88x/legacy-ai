@@ -8,21 +8,7 @@ Uses [k6-faker](https://jslib.k6.io/k6-faker/) for realistic data generation:
 
 ## Prerequisites
 
-Install k6: https://k6.io/docs/get-started/installation/
-
-```bash
-# macOS
-brew install k6
-
-# Ubuntu/Debian
-sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
-echo "deb https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
-sudo apt-get update
-sudo apt-get install k6
-
-# Windows
-winget install k6
-```
+Docker installed on your system.
 
 ## Scripts
 
@@ -34,33 +20,53 @@ winget install k6
 
 ## Usage
 
-Run against localhost (default port 5000):
+Run from the `k6` directory:
+
+```bash
+cd k6
+```
+
+Run against localhost (default port 5179):
 
 ```bash
 # Products only
-k6 run products.js
+docker run --rm -i --network=host -v $(pwd):/scripts grafana/k6 run /scripts/products.js
 
 # Orders only
-k6 run orders.js
+docker run --rm -i --network=host -v $(pwd):/scripts grafana/k6 run /scripts/orders.js
 
 # Full workflow (recommended for complete traces)
-k6 run full-workflow.js
+docker run --rm -i --network=host -v $(pwd):/scripts grafana/k6 run /scripts/full-workflow.js
 ```
 
 Run against a different URL:
 
 ```bash
-k6 run -e BASE_URL=http://localhost:8080 full-workflow.js
+docker run --rm -i --network=host -v $(pwd):/scripts grafana/k6 run -e BASE_URL=http://localhost:8080 /scripts/full-workflow.js
 ```
 
 Adjust iterations and virtual users:
 
 ```bash
 # More data: 10 VUs, 50 iterations each
-k6 run --vus 10 --iterations 50 products.js
+docker run --rm -i --network=host -v $(pwd):/scripts grafana/k6 run --vus 10 --iterations 50 /scripts/products.js
 
 # Single run for debugging
-k6 run --vus 1 --iterations 1 full-workflow.js
+docker run --rm -i --network=host -v $(pwd):/scripts grafana/k6 run --vus 1 --iterations 1 /scripts/full-workflow.js
+```
+
+## Shell Alias (Optional)
+
+Add to your `.bashrc` or `.zshrc` for convenience:
+
+```bash
+alias k6='docker run --rm -i --network=host -v $(pwd):/scripts grafana/k6'
+```
+
+Then run:
+
+```bash
+k6 run /scripts/full-workflow.js
 ```
 
 ## Configuration

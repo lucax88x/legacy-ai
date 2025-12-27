@@ -1,0 +1,8 @@
+{
+	"name": "legacy-project-k6",
+	"version": "1.0.0",
+	"scripts": {
+		"k6:build": "docker run --rm -u \"$(id -u):$(id -g)\" -v \"${PWD}:/xk6\" grafana/xk6 build --with github.com/grafana/xk6-faker@v0.4.4",
+		"k6:orders": "./k6 run orders.js"
+	}
+}
