@@ -12,5 +12,18 @@ services:
       - postgres_data:/var/lib/postgresql
     restart: unless-stopped
 
+  otel-lgtm:
+    image: grafana/otel-lgtm:latest
+    container_name: legacy_otel_lgtm
+    environment:
+      # ENABLE_LOGS_LOKI: true
+      # ENABLE_LOGS_TEMPO: true
+      ENABLE_LOGS_OTELCOL: true
+    ports:
+      - "3000:3000"
+      - "4317:4317"
+      - "4318:4318"
+    restart: unless-stopped
+
 volumes:
   postgres_data:

@@ -40,3 +40,4 @@ public.pem
 coverage
 .sonarqube
 node_modules
+.env
