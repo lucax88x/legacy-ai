@@ -1,22 +1,28 @@
-using Microsoft.EntityFrameworkCore;
-using Microsoft.SemanticKernel;
-using Legacy.Api.Data;
-using Legacy.Api.Models;
-using Legacy.Api.DTOs;
-using Legacy.Api.Services;
-using Legacy.Api.Plugins;
 using System.Diagnostics;
-using DotNetEnv.Configuration;
+using DotNetEnv;
 using Legacy.Api;
+using Legacy.Api.Data;
+using Legacy.Api.DTOs;
+using Legacy.Api.Filters;
+using Legacy.Api.Models;
+using Legacy.Api.Plugins;
+using Legacy.Api.Services;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.AI;
+using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.Connectors.Qdrant;
+using Microsoft.SemanticKernel.Data;
+using Npgsql;
+using OpenTelemetry;
+using OpenTelemetry.Exporter;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
-using Npgsql;
-using OpenTelemetry;
-using OpenTelemetry.Exporter;
+using Qdrant.Client;
+using ChatResponse = Legacy.Api.DTOs.ChatResponse;
 
-DotNetEnv.Env.Load();
+Env.Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,7 +30,7 @@ var serviceName = "Legacy.Api";
 var serviceVersion = "1.0.0";
 
 builder.Logging.ClearProviders();
-builder.Logging.AddConsole(options => { options.TimestampFormat = "[yyyy-MM-dd HH:mm:ss.fff] "; });
+builder.Logging.AddSimpleConsole(options => { options.TimestampFormat = "[yyyy-MM-dd HH:mm:ss.fff] "; });
 builder.Logging.AddOpenTelemetry(options =>
 {
     options.SetResourceBuilder(ResourceBuilder.CreateDefault()
@@ -37,8 +43,10 @@ builder.Services.AddOpenTelemetry()
     .ConfigureResource(resource => resource
         .AddService(serviceName, serviceVersion: serviceVersion))
     .WithTracing(tracing => tracing
+        .AddSource("Legacy.Api.SemanticKernel")
         .AddAspNetCoreInstrumentation()
         .AddHttpClientInstrumentation()
+        .AddGrpcClientInstrumentation()
         .AddNpgsql()
     )
     .WithMetrics(metrics => metrics
@@ -54,22 +62,27 @@ builder.Services.AddDbContext<LegacyDbContext>(options =>
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 
+// Configuration
+var openAiApiKey = builder.Configuration["OpenAI:ApiKey"] ?? throw new Exception("missing OpenAI:ApiKey");
+var openAiModelId = builder.Configuration["OpenAI:ModelId"] ?? "gpt-4o";
+
+var openAiEmbeddingModelId = "text-embedding-3-small";
+
+var qdrantHost = builder.Configuration["Qdrant:Host"] ?? "localhost";
+var qdrantPort = int.Parse(builder.Configuration["Qdrant:Port"] ?? "6334");
+
+builder.Services.AddSingleton<QdrantClient>(sp => new QdrantClient(qdrantHost, qdrantPort));
+builder.Services.AddQdrantVectorStore();
+
 builder.Services.AddSingleton(_ =>
 {
     var kernelBuilder = Kernel.CreateBuilder();
 
-    var openAiApiKey = builder.Configuration["OpenAI:ApiKey"];
-    var openAiModelId = builder.Configuration["OpenAI:ModelId"] ?? "gpt-4o";
-
-    if (string.IsNullOrEmpty(openAiApiKey))
-    {
-        throw new Exception("missing api-key");
-    }
-
     kernelBuilder.AddOpenAIChatCompletion(openAiModelId, openAiApiKey);
 
-    // to test with debezium
-    // kernelBuilder.AddVectorStoreTextSearch<>()
+#pragma warning disable SKEXP0010
+    kernelBuilder.AddOpenAIEmbeddingGenerator(openAiEmbeddingModelId, openAiApiKey);
+#pragma warning restore SKEXP0010
 
     return kernelBuilder;
 });
@@ -85,6 +98,21 @@ builder.Services.AddScoped(sp =>
     kernel.Plugins.AddFromObject(new ProductsPlugin(productService), "ProductsPlugin");
     kernel.Plugins.AddFromObject(new OrdersPlugin(orderService), "OrdersPlugin");
 
+    var vectorStore = sp.GetRequiredService<QdrantVectorStore>();
+    var embeddingGenerator = kernel.GetRequiredService<IEmbeddingGenerator<string, Embedding<float>>>();
+    var productCollection = vectorStore.GetCollection<ulong, ProductVectorRecord>("products");
+
+#pragma warning disable SKEXP0001
+    var productTextSearch = new VectorStoreTextSearch<ProductVectorRecord>(productCollection, embeddingGenerator);
+#pragma warning restore SKEXP0001
+
+    kernel.Plugins.Add(productTextSearch.CreateWithGetTextSearchResults("SearchProducts",
+        "Search for products using semantic search. Use this to find products by description, name, or category."));
+
+    // Add function invocation filter for debugging
+    var filterLogger = sp.GetRequiredService<ILogger<LoggingFunctionFilter>>();
+    kernel.FunctionInvocationFilters.Add(new LoggingFunctionFilter(filterLogger));
+
     return kernel;
 });
 
@@ -94,8 +122,8 @@ builder.Services.AddCors(options =>
     options.AddDefaultPolicy(policy =>
     {
         policy.AllowAnyOrigin()
-              .AllowAnyMethod()
-              .AllowAnyHeader();
+            .AllowAnyMethod()
+            .AllowAnyHeader();
     });
 });
 
@@ -144,8 +172,6 @@ app.MapPost("/api/chat", async (ChatRequest request, Kernel kernel, ILogger<Prog
 {
     try
     {
-        logger.LogInformation("Starting chat");
-
         var settings = new PromptExecutionSettings
         {
             FunctionChoiceBehavior = FunctionChoiceBehavior.Auto(),

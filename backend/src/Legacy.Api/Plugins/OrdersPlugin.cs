@@ -6,20 +6,13 @@ using System.Text.Json;
 
 namespace Legacy.Api.Plugins;
 
-public class OrdersPlugin
+public class OrdersPlugin(IOrderService orderService)
 {
-    private readonly IOrderService _orderService;
-
-    public OrdersPlugin(IOrderService orderService)
-    {
-        _orderService = orderService;
-    }
-
     [KernelFunction]
     [Description("Get all orders from the system")]
     public async Task<string> GetAllOrders()
     {
-        var orders = await _orderService.GetAllOrdersAsync();
+        var orders = await orderService.GetAllOrdersAsync();
         return JsonSerializer.Serialize(orders);
     }
 
@@ -27,7 +20,7 @@ public class OrdersPlugin
     [Description("Get an order by its ID")]
     public async Task<string> GetOrderById([Description("The ID of the order")] int orderId)
     {
-        var order = await _orderService.GetOrderByIdAsync(orderId);
+        var order = await orderService.GetOrderByIdAsync(orderId);
         if (order is null)
             return $"Order with ID {orderId} not found.";
 
@@ -40,7 +33,8 @@ public class OrdersPlugin
         [Description("Customer name")] string customerName,
         [Description("Customer email")] string customerEmail,
         [Description("Customer address")] string customerAddress,
-        [Description("Order status (Pending, Processing, Shipped, Delivered, Cancelled)")] string status = "Pending")
+        [Description("Order status (Pending, Processing, Shipped, Delivered, Cancelled)")]
+        string status = "Pending")
     {
         var orderStatus = Enum.Parse<OrderStatus>(status, true);
         var order = new Order
@@ -52,20 +46,22 @@ public class OrdersPlugin
             OrderItems = new List<OrderItem>()
         };
 
-        var result = await _orderService.CreateOrderAsync(order);
+        var result = await orderService.CreateOrderAsync(order);
         return $"Order created successfully with ID: {result.Id}. Note: You need to add order items separately.";
     }
 
     [KernelFunction]
     [Description("Update an existing order")]
     public async Task<string> UpdateOrder(
-        [Description("The ID of the order to update")] int orderId,
+        [Description("The ID of the order to update")]
+        int orderId,
         [Description("Customer name")] string? customerName = null,
         [Description("Customer email")] string? customerEmail = null,
         [Description("Customer address")] string? customerAddress = null,
-        [Description("Order status (Pending, Processing, Shipped, Delivered, Cancelled)")] string? status = null)
+        [Description("Order status (Pending, Processing, Shipped, Delivered, Cancelled)")]
+        string? status = null)
     {
-        var existingOrder = await _orderService.GetOrderByIdAsync(orderId);
+        var existingOrder = await orderService.GetOrderByIdAsync(orderId);
         if (existingOrder is null)
             return $"Order with ID {orderId} not found.";
 
@@ -77,7 +73,7 @@ public class OrdersPlugin
             Status = status != null ? Enum.Parse<OrderStatus>(status, true) : existingOrder.Status
         };
 
-        var success = await _orderService.UpdateOrderAsync(orderId, order);
+        var success = await orderService.UpdateOrderAsync(orderId, order);
         return success ? $"Order {orderId} updated successfully." : $"Failed to update order {orderId}.";
     }
 
@@ -85,7 +81,7 @@ public class OrdersPlugin
     [Description("Delete an order by its ID")]
     public async Task<string> DeleteOrder([Description("The ID of the order to delete")] int orderId)
     {
-        var success = await _orderService.DeleteOrderAsync(orderId);
+        var success = await orderService.DeleteOrderAsync(orderId);
         return success ? $"Order {orderId} deleted successfully." : $"Order with ID {orderId} not found.";
     }
 }

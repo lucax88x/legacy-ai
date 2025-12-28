@@ -139,6 +139,28 @@ def get_embedding(openai_client, text):
     return response.data[0].embedding
 
 
+def sanitize_payload(data):
+    """Convert Decimal and other unsupported types to Qdrant-compatible types."""
+    from decimal import Decimal
+
+    sanitized = {}
+    for key, value in data.items():
+        if isinstance(value, Decimal):
+            sanitized[key] = float(value)
+        elif isinstance(value, dict):
+            sanitized[key] = sanitize_payload(value)
+        elif isinstance(value, list):
+            sanitized[key] = [
+                sanitize_payload(item) if isinstance(item, dict)
+                else float(item) if isinstance(item, Decimal)
+                else item
+                for item in value
+            ]
+        else:
+            sanitized[key] = value
+    return sanitized
+
+
 def process_event(event, topic, openai_client, qdrant_client):
     """Process a single CDC event."""
     try:
@@ -183,14 +205,14 @@ def process_event(event, topic, openai_client, qdrant_client):
         # Generate embedding using OpenAI
         embedding = get_embedding(openai_client, text)
 
-        # Upsert to Qdrant
+        # Upsert to Qdrant (sanitize payload to convert Decimal to float)
         qdrant_client.upsert(
             collection_name=collection_name,
             points=[
                 models.PointStruct(
                     id=record_id,
                     vector=embedding,
-                    payload=after  # Store original data as payload
+                    payload=sanitize_payload(after)
                 )
             ]
         )
