@@ -5,7 +5,7 @@ namespace Legacy.Api.Services;
 
 public interface IProductService
 {
-    Task<IEnumerable<ProductDto>> GetAllProductsAsync();
+    Task<PagedResult<ProductDto>> GetProductsAsync(int page = 1, int pageSize = 10);
     Task<ProductDto?> GetProductByIdAsync(int id);
     Task<ProductDto> CreateProductAsync(Product product);
     Task<bool> UpdateProductAsync(int id, Product product);

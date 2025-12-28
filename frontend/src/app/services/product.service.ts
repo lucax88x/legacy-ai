@@ -1,7 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
-import { Product, CreateProductRequest, UpdateProductRequest } from '../models/product.model';
+import { Product, PagedResult, CreateProductRequest, UpdateProductRequest } from '../models/product.model';
 import { environment } from '../../environments/environment';
 
 @Injectable({
@@ -15,14 +15,31 @@ export class ProductService {
   readonly selectedProduct = signal<Product | null>(null);
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
+  readonly currentPage = signal(1);
+  readonly pageSize = signal(10);
+  readonly totalCount = signal(0);
+  readonly totalPages = signal(0);
+  readonly hasPreviousPage = signal(false);
+  readonly hasNextPage = signal(false);
 
-  getAll(): Observable<Product[]> {
+  getAll(page: number = 1, pageSize: number = 10): Observable<PagedResult<Product>> {
     this.loading.set(true);
     this.error.set(null);
-    return this.http.get<Product[]>(this.apiUrl).pipe(
+
+    const params = new HttpParams()
+      .set('page', page.toString())
+      .set('pageSize', pageSize.toString());
+
+    return this.http.get<PagedResult<Product>>(this.apiUrl, { params }).pipe(
       tap({
-        next: (products) => {
-          this.products.set(products);
+        next: (result) => {
+          this.products.set(result.items);
+          this.currentPage.set(result.page);
+          this.pageSize.set(result.pageSize);
+          this.totalCount.set(result.totalCount);
+          this.totalPages.set(result.totalPages);
+          this.hasPreviousPage.set(result.hasPreviousPage);
+          this.hasNextPage.set(result.hasNextPage);
           this.loading.set(false);
         },
         error: (err) => {

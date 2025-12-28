@@ -7,10 +7,16 @@ public static class ProductApis
 {
     public static void Map(WebApplication app)
     {
-        app.MapGet("/api/products", async (IProductService productService) =>
+        app.MapGet("/api/products", async (int? page, int? pageSize, IProductService productService) =>
         {
-            var products = await productService.GetAllProductsAsync();
-            return Results.Ok(products);
+            var p = page ?? 1;
+            var ps = pageSize ?? 10;
+            if (p < 1) p = 1;
+            if (ps < 1) ps = 10;
+            if (ps > 100) ps = 100;
+
+            var result = await productService.GetProductsAsync(p, ps);
+            return Results.Ok(result);
         });
 
         app.MapGet("/api/products/{id}", async (int id, IProductService productService) =>

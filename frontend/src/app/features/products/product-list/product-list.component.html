@@ -53,4 +53,29 @@
       </tbody>
     </table>
   </div>
+
+  <div class="pagination">
+    <div class="pagination-info">
+      Showing {{ (productService.currentPage() - 1) * productService.pageSize() + 1 }}
+      - {{ productService.currentPage() * productService.pageSize() > productService.totalCount() ? productService.totalCount() : productService.currentPage() * productService.pageSize() }}
+      of {{ productService.totalCount() }} products
+    </div>
+    <div class="pagination-controls">
+      <button
+        class="btn btn-sm"
+        (click)="previousPage()"
+        [disabled]="!productService.hasPreviousPage()">
+        Previous
+      </button>
+      <span class="page-indicator">
+        Page {{ productService.currentPage() }} of {{ productService.totalPages() }}
+      </span>
+      <button
+        class="btn btn-sm"
+        (click)="nextPage()"
+        [disabled]="!productService.hasNextPage()">
+        Next
+      </button>
+    </div>
+  </div>
 }

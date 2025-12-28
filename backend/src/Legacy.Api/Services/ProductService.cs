@@ -7,20 +7,34 @@ namespace Legacy.Api.Services;
 
 public class ProductService(LegacyDbContext db) : IProductService
 {
-    public async Task<IEnumerable<ProductDto>> GetAllProductsAsync()
+    public async Task<PagedResult<ProductDto>> GetProductsAsync(int page = 1, int pageSize = 10)
     {
-        var products = await db.Products.ToListAsync();
-        return products.Select(p => new ProductDto
+        var totalCount = await db.Products.CountAsync();
+
+        var products = await db.Products
+            .OrderBy(p => p.Id)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(p => new ProductDto
+            {
+                Id = p.Id,
+                Name = p.Name,
+                Description = p.Description,
+                Price = p.Price,
+                StockQuantity = p.StockQuantity,
+                Category = p.Category,
+                CreatedAt = p.CreatedAt,
+                UpdatedAt = p.UpdatedAt
+            })
+            .ToListAsync();
+
+        return new PagedResult<ProductDto>
         {
-            Id = p.Id,
-            Name = p.Name,
-            Description = p.Description,
-            Price = p.Price,
-            StockQuantity = p.StockQuantity,
-            Category = p.Category,
-            CreatedAt = p.CreatedAt,
-            UpdatedAt = p.UpdatedAt
-        }).ToList();
+            Items = products,
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = totalCount
+        };
     }
 
     public async Task<ProductDto?> GetProductByIdAsync(int id)

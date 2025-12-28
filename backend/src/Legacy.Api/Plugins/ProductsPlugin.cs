@@ -16,11 +16,13 @@ public class ProductsPlugin
     }
 
     [KernelFunction]
-    [Description("Get all products from the catalog")]
-    public async Task<string> GetAllProducts()
+    [Description("Get products from the catalog with pagination")]
+    public async Task<string> GetProducts(
+        [Description("Page number (default: 1)")] int page = 1,
+        [Description("Number of products per page (default: 10, max: 100)")] int pageSize = 10)
     {
-        var products = await _productService.GetAllProductsAsync();
-        return JsonSerializer.Serialize(products);
+        var result = await _productService.GetProductsAsync(page, pageSize);
+        return JsonSerializer.Serialize(result);
     }
 
     [KernelFunction]
