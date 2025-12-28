@@ -1,0 +1,16 @@
+{
+  "name": "legacy-postgres-connector",
+  "config": {
+    "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+    "database.hostname": "postgres",
+    "database.port": "5432",
+    "database.user": "postgres",
+    "database.password": "postgres",
+    "database.dbname": "legacy_db",
+    "topic.prefix": "legacy",
+    "table.include.list": "public.Products,public.Orders,public.OrderItems",
+    "plugin.name": "pgoutput",
+    "slot.name": "legacy_slot",
+    "publication.name": "legacy_publication"
+  }
+}

@@ -2,6 +2,10 @@ services:
   postgres:
     image: postgres:18
     container_name: legacy_postgres
+    command:
+      - "postgres"
+      - "-c"
+      - "wal_level=logical"  # Required for Debezium CDC
     environment:
       POSTGRES_DB: legacy_db
       POSTGRES_USER: postgres
@@ -25,5 +29,80 @@ services:
       - "4318:4318"
     restart: unless-stopped
 
+  # Vector Database for semantic search
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: legacy_qdrant
+    ports:
+      - "6333:6333"  # REST API
+      - "6334:6334"  # gRPC
+    volumes:
+      - qdrant_data:/qdrant/storage
+    restart: unless-stopped
+
+  # Kafka dependency
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: legacy_zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    restart: unless-stopped
+
+  # Message broker for CDC events
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: legacy_kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    restart: unless-stopped
+
+  # Debezium Connect - captures PostgreSQL changes
+  debezium:
+    image: debezium/connect:2.4
+    container_name: legacy_debezium
+    depends_on:
+      - kafka
+      - postgres
+    ports:
+      - "8083:8083"
+    environment:
+      BOOTSTRAP_SERVERS: kafka:29092
+      GROUP_ID: 1
+      CONFIG_STORAGE_TOPIC: debezium_configs
+      OFFSET_STORAGE_TOPIC: debezium_offsets
+      STATUS_STORAGE_TOPIC: debezium_statuses
+      CONFIG_STORAGE_REPLICATION_FACTOR: 1
+      OFFSET_STORAGE_REPLICATION_FACTOR: 1
+      STATUS_STORAGE_REPLICATION_FACTOR: 1
+    restart: unless-stopped
+
+  # Syncs CDC events from Kafka to Qdrant
+  qdrant-sync:
+    build:
+      context: ./debezium
+      dockerfile: Dockerfile
+    container_name: legacy_qdrant_sync
+    depends_on:
+      - kafka
+      - qdrant
+      - debezium
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      QDRANT_HOST: qdrant
+      QDRANT_PORT: 6333
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+    restart: unless-stopped
+
 volumes:
   postgres_data:
+  qdrant_data:

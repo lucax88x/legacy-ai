@@ -92,7 +92,7 @@ Content-Type: application/json
       "unitPrice": 29.99
     }
   ],
-  "status": "Pending"
+  "status": 0
 }
 
 
@@ -108,7 +108,7 @@ Content-Type: application/json
   "customerAddress": "456 Oak Ave, City, Country",
   "customerEmail": "john.doe@example.com",
   "customerName": "John Doe",
-  "status": "Processing"
+  "status": 1
 }
 
 

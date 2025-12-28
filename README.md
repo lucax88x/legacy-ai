@@ -42,7 +42,7 @@ A .NET 10 minimal API project with Entity Framework Core and PostgreSQL for mana
    ```
 
 4. **Access the API**:
-   - Base URL: `https://localhost:7000` or `http://localhost:5000`
+   - Base URL: `https://localhost:7000` or `http://localhost:5179`
    - OpenAPI/Swagger: Available in development mode
 
 ## API Endpoints

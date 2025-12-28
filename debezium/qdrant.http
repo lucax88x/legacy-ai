@@ -1,0 +1,17 @@
+### qdrant all collections
+
+GET http://localhost:6333/collections HTTP/1.1
+
+
+### qdrant products collection
+
+GET http://localhost:6333/collections/products HTTP/1.1
+
+
+### check connectors
+
+GET http://localhost:8083/connectors HTTP/1.1
+
+### status of connector
+
+GET http://localhost:8083/connectors/legacy-postgres-connector/status

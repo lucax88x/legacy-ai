@@ -1,14 +1,19 @@
 {
-  "name": "legacy-project",
-  "version": "1.0.0",
-  "description": "Legacy project with API, CLI, and database services",
-  "scripts": {
-    "docker:up": "docker compose up -d",
-    "docker:down": "docker compose down",
-    "api": "cd src/Legacy.Api && dotnet run",
-    "cli": "cd src/Legacy.DataGenerator && dotnet run"
-  },
-  "keywords": ["legacy", "api", "cli"],
-  "author": "",
-  "license": "ISC"
+	"name": "legacy-project",
+	"version": "1.0.0",
+	"description": "Legacy project with API, CLI, and database services",
+	"scripts": {
+		"docker:up": "docker compose up -d",
+		"docker:down": "docker compose down",
+		"dev": "pnpm -r --parallel run dev"
+	},
+	"packageManager": "pnpm@10.18.0",
+	"pnpm": {
+		"onlyBuiltDependencies": [
+			"@parcel/watcher",
+			"esbuild",
+			"lmdb",
+			"msgpackr-extract"
+		]
+	}
 }
