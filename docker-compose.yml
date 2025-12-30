@@ -17,16 +17,19 @@ services:
     restart: unless-stopped
 
   otel-lgtm:
-    image: grafana/otel-lgtm:latest
+    image: grafana/otel-lgtm:0.13.0
     container_name: legacy_otel_lgtm
     environment:
       # ENABLE_LOGS_LOKI: true
-      # ENABLE_LOGS_TEMPO: true
-      ENABLE_LOGS_OTELCOL: true
+      ENABLE_LOGS_TEMPO: true
+      # ENABLE_LOGS_OTELCOL: true
     ports:
-      - "3000:3000"
-      - "4317:4317"
-      - "4318:4318"
+      - "3000:3000"   # Grafana
+      - "3200:3200"   # Tempo API (for TraceQL queries + MCP at /api/mcp)
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+    volumes:
+      - ./observability/tempo-config.yaml:/otel-lgtm/tempo-config.yaml:ro
     restart: unless-stopped
 
   # Vector Database for semantic search
@@ -100,7 +103,7 @@ services:
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       QDRANT_HOST: qdrant
       QDRANT_PORT: 6333
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_API_KEY: ${ANTHROPIC_API_KEY}
     restart: unless-stopped
 
 volumes:

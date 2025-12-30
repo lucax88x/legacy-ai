@@ -2,7 +2,6 @@
 	"name": "legacy-project-backend",
 	"version": "1.0.0",
 	"scripts": {
-		"dev": "cd src/Legacy.Api && dotnet run",
-		"dev:watch": "cd src/Legacy.Api && dotnet watch run"
+		"dev": "cd src/Legacy.Api && dotnet watch run"
 	}
 }

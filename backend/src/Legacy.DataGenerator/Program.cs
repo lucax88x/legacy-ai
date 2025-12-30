@@ -2,12 +2,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Bogus;
-using Legacy.Api.Data;
 using Legacy.Api.Models;
 
 var services = new ServiceCollection();
 
-services.AddDbContext<LegacyDbContext>(options =>
+services.AddDbContext<Legacy.Api.Data.LegacyDbContext>(options =>
     options.UseNpgsql("Host=localhost;Database=legacy_db;Username=postgres;Password=postgres"));
 
 services.AddLogging(builder => builder.AddConsole());
@@ -15,7 +14,7 @@ services.AddLogging(builder => builder.AddConsole());
 var serviceProvider = services.BuildServiceProvider();
 
 using var scope = serviceProvider.CreateScope();
-var context = scope.ServiceProvider.GetRequiredService<LegacyDbContext>();
+var context = scope.ServiceProvider.GetRequiredService<Legacy.Api.Data.LegacyDbContext>();
 var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
 
 try

@@ -30,7 +30,7 @@ var serviceName = "Legacy.Api";
 var serviceVersion = "1.0.0";
 
 builder.Logging.ClearProviders();
-builder.Logging.AddSimpleConsole(options => { options.TimestampFormat = "[yyyy-MM-dd HH:mm:ss.fff] "; });
+builder.Logging.AddSimpleConsole(options => options.TimestampFormat = "[yyyy-MM-dd HH:mm:ss.fff] ");
 builder.Logging.AddOpenTelemetry(options =>
 {
     options.SetResourceBuilder(ResourceBuilder.CreateDefault()
@@ -71,8 +71,16 @@ var openAiEmbeddingModelId = "text-embedding-3-small";
 var qdrantHost = builder.Configuration["Qdrant:Host"] ?? "localhost";
 var qdrantPort = int.Parse(builder.Configuration["Qdrant:Port"] ?? "6334");
 
-builder.Services.AddSingleton<QdrantClient>(sp => new QdrantClient(qdrantHost, qdrantPort));
+builder.Services.AddSingleton(sp => new QdrantClient(qdrantHost, qdrantPort));
 builder.Services.AddQdrantVectorStore();
+
+// Tempo configuration for trace queries
+var tempoBaseUrl = builder.Configuration["Tempo:BaseUrl"] ?? "http://localhost:3200";
+builder.Services.AddHttpClient("Tempo", client =>
+{
+    client.BaseAddress = new Uri(tempoBaseUrl);
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
 
 builder.Services.AddSingleton(_ =>
 {
@@ -97,6 +105,13 @@ builder.Services.AddScoped(sp =>
 
     kernel.Plugins.AddFromObject(new ProductsPlugin(productService), "ProductsPlugin");
     kernel.Plugins.AddFromObject(new OrdersPlugin(orderService), "OrdersPlugin");
+
+    // Add Tempo plugin for trace queries
+    var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
+    var tempoHttpClient = httpClientFactory.CreateClient("Tempo");
+    var tempoLogger = sp.GetRequiredService<ILogger<TempoPlugin>>();
+    var tempoUrl = sp.GetRequiredService<IConfiguration>()["Tempo:BaseUrl"] ?? "http://localhost:3200";
+    kernel.Plugins.AddFromObject(new TempoPlugin(tempoHttpClient, tempoUrl, tempoLogger), "TempoPlugin");
 
     var vectorStore = sp.GetRequiredService<QdrantVectorStore>();
     var embeddingGenerator = kernel.GetRequiredService<IEmbeddingGenerator<string, Embedding<float>>>();
@@ -179,8 +194,9 @@ app.MapPost("/api/chat", async (ChatRequest request, Kernel kernel, ILogger<Prog
 
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(60));
 
+        var now = DateTimeOffset.UtcNow;
         var systemMessage =
-            "You are a helpful assistant that can help manage products and orders. Use the available functions to help the user.";
+            $"You are a helpful assistant that can help manage products and orders, and analyze application traces. Use the available functions to help the user. When asked about operations like DELETE, POST, GET requests, or errors, use the TempoPlugin to search traces.\n\nCurrent date and time: {now:yyyy-MM-dd HH:mm:ss} UTC. Current Unix timestamp: {now.ToUnixTimeSeconds()}. When querying traces, do NOT pass startTime/endTime unless the user specifies a specific time range - let the functions use their defaults.";
 
         var result = await kernel.InvokePromptAsync($"{systemMessage}\n\nUser: {request.Message}", new(settings),
             cancellationToken: cts.Token);

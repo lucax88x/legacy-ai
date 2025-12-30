@@ -41,3 +41,5 @@ coverage
 .sonarqube
 node_modules
 .env
+
+.claude

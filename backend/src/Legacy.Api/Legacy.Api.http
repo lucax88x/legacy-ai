@@ -194,7 +194,7 @@ POST {{Legacy_Api_HostAddress}}/api/chat HTTP/1.1
 Content-Type: application/json
 
 {
-  "message": "What products do we have and what are their prices?"
+  "message": "What is the last 5 orders created and who created it?"
 }
   
 ### Chat - Complex query
@@ -203,7 +203,7 @@ POST {{Legacy_Api_HostAddress}}/api/chat HTTP/1.1
 Content-Type: application/json
 
 {
-  "message": "how many products do we have?"
+  "message": "you can tell how many people deleted orders yesterday?"
 }
 
 
