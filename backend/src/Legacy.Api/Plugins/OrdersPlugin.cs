@@ -9,10 +9,12 @@ namespace Legacy.Api.Plugins;
 public class OrdersPlugin(IOrderService orderService)
 {
     [KernelFunction]
-    [Description("Get all orders from the system")]
-    public async Task<string> GetAllOrders()
+    [Description("Get orders from the system with pagination")]
+    public async Task<string> GetOrders(
+        [Description("Page number (1-based)")] int page = 1,
+        [Description("Number of orders per page")] int pageSize = 10)
     {
-        var orders = await orderService.GetAllOrdersAsync();
+        var orders = await orderService.GetOrdersAsync(page, pageSize);
         return JsonSerializer.Serialize(orders);
     }
 

@@ -14,30 +14,46 @@ public class OrderService : IOrderService
         _db = db;
     }
 
-    public async Task<IEnumerable<OrderDto>> GetAllOrdersAsync()
+    public async Task<PagedResult<OrderDto>> GetOrdersAsync(int page = 1, int pageSize = 10)
     {
-        var orders = await _db.Orders.Include(o => o.OrderItems).ThenInclude(oi => oi.Product).ToListAsync();
-        return orders.Select(o => new OrderDto
-        {
-            Id = o.Id,
-            CustomerName = o.CustomerName,
-            CustomerEmail = o.CustomerEmail,
-            CustomerAddress = o.CustomerAddress,
-            OrderDate = o.OrderDate,
-            Status = o.Status,
-            TotalAmount = o.TotalAmount,
-            CreatedAt = o.CreatedAt,
-            UpdatedAt = o.UpdatedAt,
-            OrderItems = o.OrderItems.Select(oi => new OrderItemDto
+        var totalCount = await _db.Orders.CountAsync();
+
+        var orders = await _db.Orders
+            .OrderBy(o => o.Id)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Include(o => o.OrderItems)
+            .ThenInclude(oi => oi.Product)
+            .Select(o => new OrderDto
             {
-                Id = oi.Id,
-                ProductId = oi.ProductId,
-                ProductName = oi.Product.Name,
-                Quantity = oi.Quantity,
-                UnitPrice = oi.UnitPrice,
-                TotalPrice = oi.TotalPrice
-            }).ToList()
-        }).ToList();
+                Id = o.Id,
+                CustomerName = o.CustomerName,
+                CustomerEmail = o.CustomerEmail,
+                CustomerAddress = o.CustomerAddress,
+                OrderDate = o.OrderDate,
+                Status = o.Status,
+                TotalAmount = o.TotalAmount,
+                CreatedAt = o.CreatedAt,
+                UpdatedAt = o.UpdatedAt,
+                OrderItems = o.OrderItems.Select(oi => new OrderItemDto
+                {
+                    Id = oi.Id,
+                    ProductId = oi.ProductId,
+                    ProductName = oi.Product.Name,
+                    Quantity = oi.Quantity,
+                    UnitPrice = oi.UnitPrice,
+                    TotalPrice = oi.TotalPrice
+                }).ToList()
+            })
+            .ToListAsync();
+
+        return new PagedResult<OrderDto>
+        {
+            Items = orders,
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = totalCount
+        };
     }
 
     public async Task<OrderDto?> GetOrderByIdAsync(int id)

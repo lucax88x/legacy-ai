@@ -1,7 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
-import { Order, CreateOrderRequest, UpdateOrderRequest } from '../models/order.model';
+import { Order, CreateOrderRequest, UpdateOrderRequest, PagedResult } from '../models/order.model';
 import { environment } from '../../environments/environment';
 
 @Injectable({
@@ -15,14 +15,31 @@ export class OrderService {
   readonly selectedOrder = signal<Order | null>(null);
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
+  readonly currentPage = signal(1);
+  readonly pageSize = signal(10);
+  readonly totalCount = signal(0);
+  readonly totalPages = signal(0);
+  readonly hasPreviousPage = signal(false);
+  readonly hasNextPage = signal(false);
 
-  getAll(): Observable<Order[]> {
+  getAll(page: number = 1, pageSize: number = 10): Observable<PagedResult<Order>> {
     this.loading.set(true);
     this.error.set(null);
-    return this.http.get<Order[]>(this.apiUrl).pipe(
+
+    const params = new HttpParams()
+      .set('page', page.toString())
+      .set('pageSize', pageSize.toString());
+
+    return this.http.get<PagedResult<Order>>(this.apiUrl, { params }).pipe(
       tap({
-        next: (orders) => {
-          this.orders.set(orders);
+        next: (result) => {
+          this.orders.set(result.items);
+          this.currentPage.set(result.page);
+          this.pageSize.set(result.pageSize);
+          this.totalCount.set(result.totalCount);
+          this.totalPages.set(result.totalPages);
+          this.hasPreviousPage.set(result.hasPreviousPage);
+          this.hasNextPage.set(result.hasNextPage);
           this.loading.set(false);
         },
         error: (err) => {

@@ -7,10 +7,16 @@ public static class OrderApis
 {
     public static void Map(WebApplication app)
     {
-        app.MapGet("/api/orders", async (IOrderService orderService) =>
+        app.MapGet("/api/orders", async (int? page, int? pageSize, IOrderService orderService) =>
         {
-            var orders = await orderService.GetAllOrdersAsync();
-            return Results.Ok(orders);
+            var p = page ?? 1;
+            var ps = pageSize ?? 10;
+            if (p < 1) p = 1;
+            if (ps < 1) ps = 10;
+            if (ps > 100) ps = 100;
+
+            var result = await orderService.GetOrdersAsync(p, ps);
+            return Results.Ok(result);
         });
 
         app.MapGet("/api/orders/{id}", async (int id, IOrderService orderService) =>

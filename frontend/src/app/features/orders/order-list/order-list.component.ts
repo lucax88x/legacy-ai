@@ -16,7 +16,30 @@ export class OrderListComponent implements OnInit {
   readonly statusLabels = OrderStatusLabels;
 
   ngOnInit(): void {
-    this.orderService.getAll().subscribe();
+    this.loadOrders();
+  }
+
+  loadOrders(): void {
+    this.orderService.getAll(
+      this.orderService.currentPage(),
+      this.orderService.pageSize()
+    ).subscribe();
+  }
+
+  goToPage(page: number): void {
+    this.orderService.getAll(page, this.orderService.pageSize()).subscribe();
+  }
+
+  previousPage(): void {
+    if (this.orderService.hasPreviousPage()) {
+      this.goToPage(this.orderService.currentPage() - 1);
+    }
+  }
+
+  nextPage(): void {
+    if (this.orderService.hasNextPage()) {
+      this.goToPage(this.orderService.currentPage() + 1);
+    }
   }
 
   getStatusLabel(status: OrderStatus): string {
@@ -36,7 +59,9 @@ export class OrderListComponent implements OnInit {
 
   deleteOrder(id: number): void {
     if (confirm('Are you sure you want to delete this order?')) {
-      this.orderService.delete(id).subscribe();
+      this.orderService.delete(id).subscribe(() => {
+        this.loadOrders();
+      });
     }
   }
 }

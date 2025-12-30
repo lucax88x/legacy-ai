@@ -56,3 +56,5 @@ export interface UpdateOrderRequest {
   customerAddress: string;
   status: OrderStatus;
 }
+
+export type { PagedResult } from './product.model';

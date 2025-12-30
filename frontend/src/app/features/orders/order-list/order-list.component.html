@@ -57,4 +57,29 @@
       </tbody>
     </table>
   </div>
+
+  <div class="pagination">
+    <div class="pagination-info">
+      Showing {{ (orderService.currentPage() - 1) * orderService.pageSize() + 1 }}
+      - {{ orderService.currentPage() * orderService.pageSize() > orderService.totalCount() ? orderService.totalCount() : orderService.currentPage() * orderService.pageSize() }}
+      of {{ orderService.totalCount() }} orders
+    </div>
+    <div class="pagination-controls">
+      <button
+        class="btn btn-sm"
+        (click)="previousPage()"
+        [disabled]="!orderService.hasPreviousPage()">
+        Previous
+      </button>
+      <span class="page-indicator">
+        Page {{ orderService.currentPage() }} of {{ orderService.totalPages() }}
+      </span>
+      <button
+        class="btn btn-sm"
+        (click)="nextPage()"
+        [disabled]="!orderService.hasNextPage()">
+        Next
+      </button>
+    </div>
+  </div>
 }
