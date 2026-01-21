@@ -10,6 +10,7 @@ using Legacy.Api.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.AI;
 using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.Connectors.Qdrant;
 using Microsoft.SemanticKernel.Data;
 using Npgsql;
@@ -196,12 +197,33 @@ app.MapPost("/api/chat", async (ChatRequest request, Kernel kernel, ILogger<Prog
 
         var now = DateTimeOffset.UtcNow;
         var systemMessage =
-            $"You are a helpful assistant that can help manage products and orders, and analyze application traces. Use the available functions to help the user. When asked about operations like DELETE, POST, GET requests, or errors, use the TempoPlugin to search traces.\n\nCurrent date and time: {now:yyyy-MM-dd HH:mm:ss} UTC. Current Unix timestamp: {now.ToUnixTimeSeconds()}. When querying traces, do NOT pass startTime/endTime unless the user specifies a specific time range - let the functions use their defaults.";
+            $"""
+            You are a helpful assistant that can help manage products and orders, and analyze application traces. Use the available functions to help the user. When asked about operations like DELETE, POST, GET requests, or errors, use the TempoPlugin to search traces.
 
-        var result = await kernel.InvokePromptAsync($"{systemMessage}\n\nUser: {request.Message}", new(settings),
-            cancellationToken: cts.Token);
+            Order statuses: Pending (0), Processing (1), Shipped (2), Delivered (3), Cancelled (4)
 
-        return Results.Ok(new ChatResponse { Response = result.ToString() });
+            Current date and time: {now:yyyy-MM-dd HH:mm:ss} UTC. Current Unix timestamp: {now.ToUnixTimeSeconds()}. When querying traces, do NOT pass startTime/endTime unless the user specifies a specific time range - let the functions use their defaults.
+            """;
+
+        var chatHistory = new ChatHistory(systemMessage);
+
+        if (request.History != null)
+        {
+            foreach (var msg in request.History)
+            {
+                if (msg.Role == "user")
+                    chatHistory.AddUserMessage(msg.Content);
+                else if (msg.Role == "assistant")
+                    chatHistory.AddAssistantMessage(msg.Content);
+            }
+        }
+
+        chatHistory.AddUserMessage(request.Message);
+
+        var chatService = kernel.GetRequiredService<IChatCompletionService>();
+        var result = await chatService.GetChatMessageContentAsync(chatHistory, settings, kernel, cts.Token);
+
+        return Results.Ok(new ChatResponse { Response = result.Content ?? string.Empty });
     }
     catch (Exception ex)
     {

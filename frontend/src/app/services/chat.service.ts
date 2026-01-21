@@ -9,8 +9,14 @@ export interface ChatMessage {
   timestamp: Date;
 }
 
+export interface ChatHistoryItem {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
 export interface ChatRequest {
   message: string;
+  history?: ChatHistoryItem[];
 }
 
 export interface ChatResponse {
@@ -32,13 +38,18 @@ export class ChatService {
     this.loading.set(true);
     this.error.set(null);
 
+    const history: ChatHistoryItem[] = this.messages().map(msg => ({
+      role: msg.role,
+      content: msg.content
+    }));
+
     this.messages.update(msgs => [...msgs, {
       role: 'user',
       content: message,
       timestamp: new Date()
     }]);
 
-    return this.http.post<ChatResponse>(this.apiUrl, { message } as ChatRequest).pipe(
+    return this.http.post<ChatResponse>(this.apiUrl, { message, history } as ChatRequest).pipe(
       tap({
         next: (response) => {
           this.messages.update(msgs => [...msgs, {
